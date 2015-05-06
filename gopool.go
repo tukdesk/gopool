@@ -35,8 +35,8 @@ func NewPool(cfg Config) (*Pool, error) {
 	return pool, nil
 }
 
-func (this *Pool) Get() interface{} {
-	return <-this.pool
+func (this *Pool) Get() (interface{}, error) {
+	return <-this.pool, nil
 }
 
 func (this *Pool) Put(x interface{}) {

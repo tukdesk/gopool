@@ -25,10 +25,10 @@ func main() {
 	count := 20
 	for i := 0; i < count; i++ {
 		go func(num int, out chan int) {
-			t, _ := p.Get().(time.Time)
+			t, _ := p.Get()
 			defer p.Put(t)
 
-			log.Println(num, t.Nanosecond())
+			log.Println(num, t.(time.Time).Nanosecond())
 
 			out <- 1
 		}(i, ct)
