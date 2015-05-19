@@ -5,10 +5,12 @@ import (
 )
 
 const (
+	defaultMin  = 1
 	defaultSize = 10
 )
 
 type Pool struct {
+	cfg  Config
 	pool chan interface{}
 }
 
@@ -21,11 +23,16 @@ func NewPool(cfg Config) (*Pool, error) {
 		cfg.Size = defaultSize
 	}
 
+	if cfg.Min < 0 || cfg.Min > cfg.Size {
+		cfg.Min = defaultMin
+	}
+
 	pool := &Pool{
+		cfg:  cfg,
 		pool: make(chan interface{}, cfg.Size),
 	}
 
-	for i := 0; i < cfg.Size; i++ {
+	for i := 0; i < cfg.Min; i++ {
 		element, err := cfg.Constructor()
 		if err != nil {
 			return nil, err
@@ -36,7 +43,12 @@ func NewPool(cfg Config) (*Pool, error) {
 }
 
 func (this *Pool) Get() (interface{}, error) {
-	return <-this.pool, nil
+	select {
+	case x := <-this.pool:
+		return x, nil
+	default:
+		return this.cfg.Constructor()
+	}
 }
 
 func (this *Pool) Put(x interface{}) {
