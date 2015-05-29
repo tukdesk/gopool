@@ -37,4 +37,6 @@ func main() {
 	for i := 0; i < count; i++ {
 		<-ct
 	}
+
+	p.Close()
 }

@@ -4,14 +4,17 @@ import (
 	"fmt"
 )
 
+var ErrPoolClosed = fmt.Errorf("pool closed")
+
 const (
 	defaultMin  = 1
 	defaultSize = 10
 )
 
 type Pool struct {
-	cfg  Config
-	pool chan interface{}
+	cfg    Config
+	pool   chan interface{}
+	closed bool
 }
 
 func NewPool(cfg Config) (*Pool, error) {
@@ -43,6 +46,10 @@ func NewPool(cfg Config) (*Pool, error) {
 }
 
 func (this *Pool) Get() (interface{}, error) {
+	if this.closed {
+		return nil, ErrPoolClosed
+	}
+
 	select {
 	case x := <-this.pool:
 		return x, nil
@@ -52,10 +59,25 @@ func (this *Pool) Get() (interface{}, error) {
 }
 
 func (this *Pool) Put(x interface{}) {
+	if this.closed {
+		return
+	}
+
 	select {
 	case this.pool <- x:
 
 	default:
 		// in case the pool is full
 	}
+}
+
+func (this *Pool) Stop() chan interface{} {
+	this.closed = true
+	return this.pool
+}
+
+func (this *Pool) Close() {
+	this.Stop()
+	close(this.pool)
+	return
 }
